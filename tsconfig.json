@@ -1,0 +1,17 @@
+{
+    "compilerOptions": {
+        "module": "commonjs",
+        "sourceMap": true,
+        "removeComments": true,
+        "preserveConstEnums": true,
+        "outDir": "build",
+        "target": "es2015"
+    },
+    "include": [
+        "src/**/*",
+        "demo/**/*"
+    ],
+    "exclude": [
+        "node_modules"
+    ]
+}
