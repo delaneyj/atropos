@@ -8,7 +8,7 @@ export interface EventMetadata {
     streamId: string;
     type: string;
     timestamp: string;
-    payload: string | Buffer;
+    payload: any;
 }
 
 export class Aggregate {
@@ -35,28 +35,35 @@ export class Aggregate {
         this.uncommittedSnapshots.delete(evt);
     }
 
-    raiseEvent(payload:any) {   
+    raiseEvent(payload: any) {
         const type = payload.constructor.name;
 
-        if(type === 'Object') throw new Error(`Must be a class for dynamic invocation to work`);
+        if (type === 'Object') throw new Error(`Must be a class for dynamic invocation to work`);
 
         const event = {
             id: uuid.v4(),
             streamId: this.id,
             version: ++this.version,
             timestamp: moment().utc().format(),
-            payload,type
+            payload, type
         };
 
         this.uncommittedEvents.add(event);
 
         const handlerName = `On${type}`;
         const handler = this[handlerName];
-        
-        if(!handler) debugger;
 
-        handler(payload);
+        if (!handler) debugger;
 
+        try {
+            const bound = handler.bind(this);
+            bound(payload);
+        }
+        catch (e) {
+            const aggreateId = `${this.constructor.name}<${this.id}>`;
+            const completeError = `Error handing ${type} on aggregate ${aggreateId}: ${e}`;
+            throw new Error(completeError);
+        }
         //Handle snapshotting later
     }
 }

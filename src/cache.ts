@@ -4,7 +4,7 @@ import * as NodeCache from 'node-cache';
 class Cache {
     cache: NodeCache.NodeCache
     constructor() {
-        this.cache = new NodeCache({ stdTTL: configuration.cacheExpiration, checkperiod: configuration.cacheDeleteCheckInterval })
+        this.cache = new NodeCache({ stdTTL: 0, checkperiod: 60 })
     }
 
     setKey(key: string, obj) {

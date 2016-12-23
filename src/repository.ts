@@ -1,6 +1,5 @@
 import PersistenceAdaptor from './persistence/adapter';
-import configuration from './configuration';
-import { Aggregate } from './aggregate';
+import { Aggregate, EventMetadata } from './aggregate';
 import hook from './hook';
 import { Serializer } from './serializer';
 import cache from './cache';
@@ -23,14 +22,17 @@ export default class Repository<T extends Aggregate> {
     constructor(private aggregateClass, private adapter: PersistenceAdaptor, private serializer: Serializer) {
     }
 
-    async init(){
+    async init() {
         await this.adapter.init();
     }
 
     async save(aggregate: T) {
         const events = Array.from(aggregate.uncommittedEvents);
         const snapshots = Array.from(aggregate.uncommittedSnapshots);
-        await this.adapter.save(events, snapshots);
+
+        const {serialize} = this.serializer;
+        const serializedEvents = events.map(e => Object.assign({}, e, { payload: serialize(e.payload) }));
+        await this.adapter.save(serializedEvents, snapshots);
 
         events.forEach(eventWrapper => {
             hook.execute(eventWrapper.type, eventWrapper.payload);
@@ -66,10 +68,10 @@ export default class Repository<T extends Aggregate> {
             else {
                 events.forEach(event => {
                     const {type, payload} = event;
-                    const handler = aggregate[type];
+                    const handlerName = `On${type}`;
+                    const handler = aggregate[handlerName];
                     const bound = handler.bind(aggregate);
                     bound(payload);
-                    // handler(payload);
                 });
             }
 

@@ -7,7 +7,7 @@
   "license": "MIT",
   "scripts": {
     "start": "node build/index.js",
-    "test":"node build/src/tests/cache.js | 'node_modules/.bin/faucet'"
+    "test": "node build/src/tests/cache.js | 'node_modules/.bin/faucet'"
   },
   "dependencies": {
     "@types/cbor": "^2.0.0",

@@ -2,35 +2,20 @@ import * as uuid from 'uuid';
 import Repository from '../src/repository';
 import Loki from '../src/persistence/loki';
 import { Aggregate, EventMetadata } from '../src/aggregate';
-import serializer from '../src/serializer';
+import {ZipSerializer} from '../src/serializer';
 
 class UserInfoCreated {
-    name: string;
-    surname: string;
-    address: string;
-    mobile: string;
-
-    constructor(name, surname, address, mobile) {
-        this.name = name;
-        this.surname = surname;
-        this.address = address;
-        this.mobile = mobile;
+    constructor(private name, private surname, private address, private mobile) {
     }
 }
 
 class AddressUpdated {
-    address: string;
-
-    constructor(address: string) {
-        this.address = address;
+    constructor(private address: string) {
     }
 }
 
 class MobileUpdated {
-    mobile: string;
-
-    constructor(mobile: string) {
-        this.mobile = mobile;
+    constructor(private mobile: string) {
     }
 }
 
@@ -48,6 +33,14 @@ class UserInfoAggregate extends Aggregate {
         Object.assign(this, payload);
     }
 
+    get mobile() {
+        return this._mobile;
+    }
+
+    get address() {
+        return this._address;
+    }
+
     //Mutators
     initialize(name, surname, address, mobile) {
         this.raiseEvent(new UserInfoCreated(name, surname, address, mobile));
@@ -60,8 +53,8 @@ class UserInfoAggregate extends Aggregate {
     updateMobile(mobile) {
         this.raiseEvent(new MobileUpdated(mobile));
     }
-
-    //Apply
+    
+    //Apply events
     OnUserInfoCreated(payload) {
         this._name = payload.name
         this._surname = payload.surname
@@ -76,20 +69,12 @@ class UserInfoAggregate extends Aggregate {
     OnMobileUpdated(payload) {
         this._mobile = payload.mobile
     }
-
-    get mobile(){
-        return this._mobile;
-    }
-
-    get address(){
-        return this._address;
-    }
 }
 
 
 async function doIt() {
-    const persistence = new Loki();
-    const repository = new Repository<UserInfoAggregate>(UserInfoAggregate, persistence, serializer.stringify);
+    const persistence = new Loki(`atropos.json`);
+    const repository = new Repository<UserInfoAggregate>(UserInfoAggregate, persistence, new ZipSerializer());
     await repository.init();
 
     try {

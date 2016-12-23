@@ -1,6 +1,5 @@
 import * as zlib from 'zlib';
-
-import configuration from './configuration';
+import * as cbor from 'cbor';
 import {EventMetadata} from './aggregate';
 
 export interface Serializer {
@@ -8,7 +7,7 @@ export interface Serializer {
 	deserialize<T extends EventMetadata>(data: string | Buffer): T;
 }
 
-class StringifySerializer {
+export class JSONSerializer {
 	serialize(obj) {
 		return JSON.stringify(obj);
 	}
@@ -18,11 +17,12 @@ class StringifySerializer {
 	}
 }
 
-class ZipSerializer {
+export class ZipSerializer {
 	serialize(obj) {
 		const json = JSON.stringify(obj);
 		const buffer = new Buffer(json, 'utf8');
-		return zlib.gzipSync(buffer);
+		const compressedBuffer = zlib.gzipSync(buffer);
+		return compressedBuffer;
 	}
 
 	deserialize<T>(serialized: Buffer):T {
@@ -32,7 +32,20 @@ class ZipSerializer {
 	}
 }
 
-class ThroughSerializer {
+
+export class CBORSerializer {
+	serialize(obj) {
+		const cborBuffer = cbor.encode(obj);
+		return cborBuffer;
+	}
+
+	deserialize<T>(serialized: Buffer):T {
+		const obj:T = cbor.decode(serialized);
+		return obj;
+	}
+}
+
+export class ThroughSerializer {
 	serialize(obj) {
 		return obj;
 	}
@@ -40,10 +53,4 @@ class ThroughSerializer {
 	deserialize<T>(serialized:any):T {
 		return serialized
 	}
-}
-
-export default {
-	stringify:new StringifySerializer(),
-	zip:new ZipSerializer(),
-	through: new ThroughSerializer()
 }
